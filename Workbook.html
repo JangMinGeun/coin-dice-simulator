@@ -294,7 +294,7 @@
           </div>
 
           <div>
-            <label for="coinPoint">A의 동전 앞면 점수</label>
+            <label for="coinPoint">동전 앞면 점수</label>
             <input id="coinPoint" type="number" value="5" min="0" />
           </div>
         </div>
@@ -465,7 +465,7 @@
           const bDie = randomInt(1, 6);
 
           aScore = (aCoin100 + aCoin500) * coinPoint;
-          bScore = bCoin * 5 + bDie;
+          bScore = bCoin * coinPoint + bDie;
 
           record = {
             round: i,
