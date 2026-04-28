@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>동전과 주사위 게임 시뮬레이터</title>
+
+  <style>
+    body {
+      font-family: "Arial", sans-serif;
+      margin: 0;
+      background: #f7f7f7;
+      color: #222;
+    }
+
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      text-align: center;
+      margin-bottom: 24px;
+      color: #555;
+    }
+
+    .panel {
+      background: white;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      align-items: end;
+    }
+
+    label {
+      font-weight: bold;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    select, input {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+    }
+
+    .buttons {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    button {
+      padding: 12px;
+      font-size: 16px;
+      border: none;
+      border-radius: 10px;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    .result-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      border: 1px solid #ddd;
+      border-radius: 14px;
+      padding: 16px;
+      background: #fafafa;
+    }
+
+    .card h2 {
+      margin-top: 0;
+      text-align: center;
+    }
+
+    .score {
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      margin: 8px 0;
+    }
+
+    .winner {
+      text-align: center;
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #eef2ff;
+    }
+
+    .bar-area {
+      margin-top: 16px;
+    }
+
+    .bar-label {
+      margin: 10px 0 4px;
+      font-weight: bold;
+    }
+
+    .bar-wrap {
+      width: 100%;
+      height: 28px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      width: 0%;
+      background: #60a5fa;
+      transition: width 0.4s;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+    }
+
+    th {
+      background: #f1f5f9;
+    }
+
+    .note {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 700px) {
+      .controls,
+      .result-grid,
+      .buttons {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h1>동전과 주사위 게임 시뮬레이터</h1>
+    <p class="subtitle">여러 번 반복했을 때 누가 더 유리한지 살펴봅시다.</p>
+
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label for="gameType">게임 선택</label>
+          <select id="gameType">
+            <option value="game1">1번 게임: 동전 1개 vs 주사위 1개</option>
+            <option value="game2">2번 게임: 동전 2개 vs 동전 + 주사위</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="coinPoint">A의 동전 앞면 점수</label>
+          <input id="coinPoint" type="number" value="5" min="0" />
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button onclick="runSimulation(10)">10번 실행</button>
+        <button onclick="runSimulation(20)">20번 실행</button>
+        <button onclick="runSimulation(100)">100번 실행</button>
+        <button onclick="runSimulation(1000)">1000번 실행</button>
+      </div>
+
+      <p class="note">
+        ※ 20번 이하일 때만 아래에 회차별 결과가 표시됩니다. 100번, 1000번은 전체 결과만 확인합니다.
+      </p>
+    </div>
+
+    <div class="panel result-grid">
+      <div class="card">
+        <h2>A</h2>
+        <p class="score">전체 점수: <span id="aTotal">0</span>점</p>
+        <p class="score">한 번 할 때 보통 받은 점수: <span id="aPerOne">0</span>점</p>
+      </div>
+
+      <div class="card">
+        <h2>B</h2>
+        <p class="score">전체 점수: <span id="bTotal">0</span>점</p>
+        <p class="score">한 번 할 때 보통 받은 점수: <span id="bPerOne">0</span>점</p>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="winner" id="winner">아직 실행하지 않았어요.</div>
+
+      <div class="bar-area">
+        <div class="bar-label">A</div>
+        <div class="bar-wrap">
+          <div class="bar" id="aBar"></div>
+        </div>
+
+        <div class="bar-label">B</div>
+        <div class="bar-wrap">
+          <div class="bar" id="bBar"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>회차별 결과</h2>
+      <div id="tableArea">10번 또는 20번 실행을 누르면 결과가 표시됩니다.</div>
+    </div>
+  </div>
+
+  <script>
+    function randomInt(min, max) {
+      return Math.floor(Math.random() * (max - min + 1)) + min;
+    }
+
+    function coin() {
+      return randomInt(0, 1); // 1 = 앞면, 0 = 뒷면
+    }
+
+    function coinText(value) {
+      return value === 1 ? "앞" : "뒤";
+    }
+
+    function runSimulation(n) {
+      const gameType = document.getElementById("gameType").value;
+      const coinPoint = Number(document.getElementById("coinPoint").value);
+
+      let aTotal = 0;
+      let bTotal = 0;
+      let records = [];
+
+      for (let i = 1; i <= n; i++) {
+        let record;
+
+        if (gameType === "game1") {
+          // 1번 게임: A 동전 1개, B 주사위 1개
+          const aCoin = coin();
+          const aScore = aCoin * coinPoint;
+
+          const bDie = randomInt(1, 6);
+          const bScore = bDie;
+
+          aTotal += aScore;
+          bTotal += bScore;
+
+          record = {
+            round: i,
+            aResult: coinText(aCoin),
+            aScore: aScore,
+            bResult: bDie,
+            bScore: bScore
+          };
+        } else {
+          // 2번 게임: A 동전 2개, B 동전 + 주사위
+          const aCoin100 = coin();
+          const aCoin500 = coin();
+          const aScore = (aCoin100 + aCoin500) * coinPoint;
+
+          const bCoin = coin();
+          const bDie = randomInt(1, 6);
+          const bScore = bCoin * 5 + bDie;
+
+          aTotal += aScore;
+          bTotal += bScore;
+
+          record = {
+            round: i,
+            aResult: `100원 ${coinText(aCoin100)}, 500원 ${coinText(aCoin500)}`,
+            aScore: aScore,
+            bResult: `동전 ${coinText(bCoin)}, 주사위 ${bDie}`,
+            bScore: bScore
+          };
+        }
+
+        records.push(record);
+      }
+
+      const aPerOne = (aTotal / n).toFixed(2);
+      const bPerOne = (bTotal / n).toFixed(2);
+
+      document.getElementById("aTotal").textContent = aTotal;
+      document.getElementById("bTotal").textContent = bTotal;
+      document.getElementById("aPerOne").textContent = aPerOne;
+      document.getElementById("bPerOne").textContent = bPerOne;
+
+      let winnerText;
+      if (aTotal > bTotal) {
+        winnerText = `A가 이겼어요. (${n}번 실행)`;
+      } else if (aTotal < bTotal) {
+        winnerText = `B가 이겼어요. (${n}번 실행)`;
+      } else {
+        winnerText = `비겼어요. (${n}번 실행)`;
+      }
+      document.getElementById("winner").textContent = winnerText;
+
+      updateBars(Number(aPerOne), Number(bPerOne));
+      updateTable(records, n);
+    }
+
+    function updateBars(aValue, bValue) {
+      const maxValue = Math.max(aValue, bValue, 1);
+
+      const aWidth = (aValue / maxValue) * 100;
+      const bWidth = (bValue / maxValue) * 100;
+
+      document.getElementById("aBar").style.width = aWidth + "%";
+      document.getElementById("bBar").style.width = bWidth + "%";
+    }
+
+    function updateTable(records, n) {
+      const tableArea = document.getElementById("tableArea");
+
+      if (n > 20) {
+        tableArea.textContent = "100번 이상 실행한 경우에는 회차별 결과를 생략합니다.";
+        return;
+      }
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>회차</th>
+              <th>A 결과</th>
+              <th>A 점수</th>
+              <th>B 결과</th>
+              <th>B 점수</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      records.forEach(record => {
+        html += `
+          <tr>
+            <td>${record.round}</td>
+            <td>${record.aResult}</td>
+            <td>${record.aScore}</td>
+            <td>${record.bResult}</td>
+            <td>${record.bScore}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      tableArea.innerHTML = html;
+    }
+  </script>
+</body>
+</html>
