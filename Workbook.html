@@ -208,6 +208,20 @@
       line-height: 1.5;
     }
 
+    .repeat-summary {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px solid #e5e7eb;
+      line-height: 1.7;
+      font-size: 16px;
+    }
+
+    .repeat-table-wrap {
+      overflow-x: auto;
+    }
+
     .chart-card {
       overflow-x: auto;
       background: white;
@@ -300,6 +314,7 @@
         </div>
 
         <div class="buttons">
+          <button type="button" data-run="5">5번 실행</button>
           <button type="button" data-run="10">10번 실행</button>
           <button type="button" data-run="20">20번 실행</button>
           <button type="button" data-run="100">100번 실행</button>
@@ -308,7 +323,7 @@
         </div>
 
         <p class="note">
-          ※ 20번 이하일 때만 아래에 회차별 결과가 표시됩니다. 100번 이상은 전체 결과와 그래프만 확인합니다.
+          ※ 회차별 결과는 5번 실행할 때만 표시됩니다. 10번 이상은 전체 결과와 그래프만 확인합니다.
         </p>
       </div>
 
@@ -349,7 +364,46 @@
 
       <div class="panel">
         <h2>회차별 결과</h2>
-        <div id="tableArea">10번 또는 20번 실행을 누르면 결과가 표시됩니다.</div>
+        <div id="tableArea">5번 실행을 누르면 회차별 결과가 표시됩니다.</div>
+      </div>
+
+      <div class="panel">
+        <h2>여러 번 반복 실행하기</h2>
+        <p class="note">
+          100번, 1000번 또는 10000번 실행을 여러 번 반복해서, A와 B가 각각 몇 번 이겼는지 확인할 수 있습니다.
+        </p>
+
+        <div class="controls">
+          <div>
+            <label for="repeatN">한 번에 몇 번 던질까요?</label>
+            <select id="repeatN">
+              <option value="100">100번씩 실행</option>
+              <option value="1000">1000번씩 실행</option>
+              <option value="10000">10000번씩 실행</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="repeatCount">몇 번 반복할까요?</label>
+            <input id="repeatCount" type="number" value="20" min="1" max="500" />
+          </div>
+
+          <div>
+            <label for="repeatCoinPoint">반복 실행용 동전 앞면 점수</label>
+            <input id="repeatCoinPoint" type="number" value="5" min="0" />
+          </div>
+        </div>
+
+        <div class="buttons">
+          <button type="button" id="runRepeatBtn" class="green-button">반복 실행</button>
+          <button type="button" id="resetRepeatBtn" class="gray-button">반복 실행 결과 초기화</button>
+        </div>
+
+        <div id="repeatSummary" class="repeat-summary">
+          아직 반복 실행하지 않았어요.
+        </div>
+
+        <div id="repeatResultArea" class="repeat-table-wrap"></div>
       </div>
     </section>
 
@@ -359,7 +413,7 @@
 
       <div class="panel">
         <p class="note" id="graphInfo">
-          아직 실험 결과가 없습니다. 홈으로 돌아가서 10번, 20번, 100번, 1000번, 10000번 중 하나를 먼저 실행해 주세요.
+          아직 실험 결과가 없습니다. 홈으로 돌아가서 5번, 10번, 20번, 100번, 1000번, 10000번 중 하나를 먼저 실행해 주세요.
         </p>
 
         <div class="buttons">
@@ -521,24 +575,54 @@
       return "점수 차이: 0점, 두 점수가 같아요.";
     }
 
+    function makeWinnerText(sim) {
+      const difference = Math.abs(sim.aTotal - sim.bTotal);
+
+      if (sim.aTotal > sim.bTotal) {
+        return `A가 ${difference}점 차이로 이겼어요. (${sim.n}번 실행)`;
+      }
+
+      if (sim.aTotal < sim.bTotal) {
+        return `B가 ${difference}점 차이로 이겼어요. (${sim.n}번 실행)`;
+      }
+
+      return `비겼어요. (${sim.n}번 실행)`;
+    }
+
+    function getWinnerInfo(sim) {
+      const difference = Math.abs(sim.aTotal - sim.bTotal);
+
+      if (sim.aTotal > sim.bTotal) {
+        return {
+          winner: "A",
+          resultText: `A 승`,
+          difference: difference
+        };
+      }
+
+      if (sim.aTotal < sim.bTotal) {
+        return {
+          winner: "B",
+          resultText: `B 승`,
+          difference: difference
+        };
+      }
+
+      return {
+        winner: "tie",
+        resultText: "비김",
+        difference: 0
+      };
+    }
+
     function updateHome(sim) {
       document.getElementById("aTotal").textContent = sim.aTotal;
       document.getElementById("bTotal").textContent = sim.bTotal;
       document.getElementById("aPerOne").textContent = sim.aPerOne;
       document.getElementById("bPerOne").textContent = sim.bPerOne;
 
-      const difference = Math.abs(sim.aTotal - sim.bTotal);
       document.getElementById("scoreDifference").textContent = makeDifferenceText(sim.aTotal, sim.bTotal);
-
-      let winnerText;
-      if (sim.aTotal > sim.bTotal) {
-        winnerText = `A가 ${difference}점 차이로 이겼어요. (${sim.n}번 실행)`;
-      } else if (sim.aTotal < sim.bTotal) {
-        winnerText = `B가 ${difference}점 차이로 이겼어요. (${sim.n}번 실행)`;
-      } else {
-        winnerText = `비겼어요. (${sim.n}번 실행)`;
-      }
-      document.getElementById("winner").textContent = winnerText;
+      document.getElementById("winner").textContent = makeWinnerText(sim);
 
       updateHorizontalBars(Number(sim.aPerOne), Number(sim.bPerOne));
       updateTable(sim.records, sim.n);
@@ -553,8 +637,8 @@
     function updateTable(records, n) {
       const tableArea = document.getElementById("tableArea");
 
-      if (n > 20) {
-        tableArea.textContent = "100번 이상 실행한 경우에는 회차별 결과를 생략합니다.";
+      if (n !== 5) {
+        tableArea.textContent = "회차별 결과는 5번 실행할 때만 표시합니다.";
         return;
       }
 
@@ -592,6 +676,131 @@
       tableArea.innerHTML = html;
     }
 
+    function runRepeatedSimulations() {
+      const gameType = document.getElementById("gameType").value;
+      const coinPoint = Number(document.getElementById("repeatCoinPoint").value);
+      const n = Number(document.getElementById("repeatN").value);
+      const repeatCount = Number(document.getElementById("repeatCount").value);
+      const safeRepeatCount = Math.max(1, Math.min(repeatCount, 500));
+
+      let aWins = 0;
+      let bWins = 0;
+      let ties = 0;
+      let totalA = 0;
+      let totalB = 0;
+      const results = [];
+
+      for (let i = 1; i <= safeRepeatCount; i++) {
+        const sim = makeSimulation(n, gameType, coinPoint);
+        const winnerInfo = getWinnerInfo(sim);
+
+        if (winnerInfo.winner === "A") {
+          aWins += 1;
+        } else if (winnerInfo.winner === "B") {
+          bWins += 1;
+        } else {
+          ties += 1;
+        }
+
+        totalA += sim.aTotal;
+        totalB += sim.bTotal;
+
+        results.push({
+          repeat: i,
+          aTotal: sim.aTotal,
+          bTotal: sim.bTotal,
+          aPerOne: sim.aPerOne,
+          bPerOne: sim.bPerOne,
+          resultText: winnerInfo.resultText,
+          difference: winnerInfo.difference
+        });
+      }
+
+      updateRepeatedResults({
+        n: n,
+        repeatCount: safeRepeatCount,
+        aWins: aWins,
+        bWins: bWins,
+        ties: ties,
+        totalA: totalA,
+        totalB: totalB,
+        results: results
+      });
+    }
+
+    function resetRepeatedResults() {
+      document.getElementById("repeatSummary").textContent = "아직 반복 실행하지 않았어요.";
+      document.getElementById("repeatResultArea").innerHTML = "";
+    }
+
+    function updateRepeatedResults(data) {
+      const summary = document.getElementById("repeatSummary");
+      const resultArea = document.getElementById("repeatResultArea");
+      const totalDifference = Math.abs(data.totalA - data.totalB);
+
+      let totalWinnerText;
+      if (data.totalA > data.totalB) {
+        totalWinnerText = `전체 점수 합계로는 A가 B보다 ${totalDifference}점 앞서요.`;
+      } else if (data.totalA < data.totalB) {
+        totalWinnerText = `전체 점수 합계로는 B가 A보다 ${totalDifference}점 앞서요.`;
+      } else {
+        totalWinnerText = "전체 점수 합계는 A와 B가 같아요.";
+      }
+
+      summary.innerHTML = `
+        <strong>${data.n}번 실행을 ${data.repeatCount}번 반복한 결과</strong><br />
+        ${data.repeatCount}번 중 A가 이긴 횟수: <strong>${data.aWins}번</strong><br />
+        ${data.repeatCount}번 중 B가 이긴 횟수: <strong>${data.bWins}번</strong><br />
+        비긴 횟수: <strong>${data.ties}번</strong><br />
+        A의 전체 점수 합계: <strong>${data.totalA}점</strong>, B의 전체 점수 합계: <strong>${data.totalB}점</strong><br />
+        ${totalWinnerText}
+      `;
+
+      const maxRowsToShow = 50;
+      const shownResults = data.results.slice(0, maxRowsToShow);
+
+      let html = `
+        <table>
+          <thead>
+            <tr>
+              <th>반복 회차</th>
+              <th>A 전체 점수</th>
+              <th>B 전체 점수</th>
+              <th>결과</th>
+              <th>점수 차이</th>
+              <th>A 한 번당 점수</th>
+              <th>B 한 번당 점수</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      shownResults.forEach(result => {
+        html += `
+          <tr>
+            <td>${result.repeat}</td>
+            <td>${result.aTotal}</td>
+            <td>${result.bTotal}</td>
+            <td>${result.resultText}</td>
+            <td>${result.difference}점</td>
+            <td>${result.aPerOne}</td>
+            <td>${result.bPerOne}</td>
+          </tr>
+        `;
+      });
+
+      html += `
+          </tbody>
+        </table>
+      `;
+
+      if (data.results.length > maxRowsToShow) {
+        html += `<p class="note">※ 결과 표는 처음 ${maxRowsToShow}개까지만 표시했습니다. 위의 요약에는 전체 ${data.repeatCount}번 결과가 모두 반영되어 있습니다.</p>`;
+      }
+
+      resultArea.innerHTML = html;
+    }
+
     function updateGraph(sim) {
       if (!sim) {
         return;
@@ -608,7 +817,7 @@
         : "2번 게임: 동전 2개 vs 동전 + 주사위";
 
       document.getElementById("graphInfo").textContent =
-        `${gameName} / A의 동전 앞면 점수 ${sim.coinPoint}점 / ${sim.n}번 실행한 결과입니다.`;
+        `${gameName} / 동전 앞면 점수 ${sim.coinPoint}점 / ${sim.n}번 실행한 결과입니다.`;
 
       const maxCount = Math.max(
         ...Object.values(sim.aCounts),
@@ -657,14 +866,7 @@
 
     function updateGraphExplain(sim) {
       const explain = document.getElementById("graphExplain");
-
-      if (sim.gameType === "game1") {
-        explain.textContent =
-          `이 그래프는 ${sim.n}번 실험에서 각 점수가 몇 번 나왔는지를 보여줍니다.`;
-      } else {
-        explain.textContent =
-          `이 그래프는 ${sim.n}번 실험에서 각 점수가 몇 번 나왔는지를 보여줍니다.`;
-      }
+      explain.textContent = `이 그래프는 ${sim.n}번 실험에서 각 점수가 몇 번 나왔는지를 보여줍니다.`;
     }
 
     function showPage(pageName) {
@@ -691,6 +893,22 @@
       button.addEventListener("click", () => {
         runSimulation(Number(button.dataset.run));
       });
+    });
+
+    document.getElementById("runRepeatBtn").addEventListener("click", () => {
+      runRepeatedSimulations();
+    });
+
+    document.getElementById("resetRepeatBtn").addEventListener("click", () => {
+      resetRepeatedResults();
+    });
+
+    document.getElementById("coinPoint").addEventListener("input", () => {
+      document.getElementById("repeatCoinPoint").value = document.getElementById("coinPoint").value;
+    });
+
+    document.getElementById("repeatCoinPoint").addEventListener("input", () => {
+      document.getElementById("coinPoint").value = document.getElementById("repeatCoinPoint").value;
     });
 
     document.getElementById("goGraphBtn").addEventListener("click", () => {
@@ -721,3 +939,4 @@
   </script>
 </body>
 </html>
+
